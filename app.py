@@ -1,14 +1,15 @@
 import streamlit as st
 import msal
 from pymongo import MongoClient
+import os
 
 # --- THEME & CONFIG ---
 st.set_page_config(page_title="Inara Designs Forex AI", layout="wide")
 
 # --- AUTHENTICATION (Entra ID) ---
-client_id = st.secrets["CLIENT_ID"]
-tenant_id = st.secrets["TENANT_ID"]
-client_secret = st.secrets["CLIENT_SECRET"]
+client_id = os.environ["CLIENT_ID"]
+tenant_id = os.environ["TENANT_ID"]
+client_secret = os.environ["CLIENT_SECRET"]
 authority = f"https://login.microsoftonline.com/{tenant_id}"
 
 app = msal.ConfidentialClientApplication(client_id, authority=authority, client_credential=client_secret)
@@ -20,7 +21,7 @@ if "auth_token" not in st.session_state:
     st.stop()
 
 # --- DATA CONNECTION ---
-client = MongoClient(st.secrets["MONGO_URL"])
+client = MongoClient(os.environ["MONGO_URL"])
 db = client.forex_db
 
 # --- SIDEBAR NAVIGATION ---
