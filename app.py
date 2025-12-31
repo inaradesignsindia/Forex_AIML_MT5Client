@@ -16,8 +16,24 @@ app = msal.ConfidentialClientApplication(client_id, authority=authority, client_
 
 if "auth_token" not in st.session_state:
     st.title("Inara Designs | Enterprise Forex Portal")
-    auth_url = app.get_authorization_request_url(scopes=["User.Read"])
-    st.link_button("Login with inaradesigns.store", auth_url)
+    
+    # Check if authorization code is in the URL
+    query_params = st.query_params
+    if "code" in query_params:
+        code = query_params["code"]
+        try:
+            result = app.acquire_token_by_authorization_code(code, scopes=["User.Read"], redirect_uri=os.environ.get("REDIRECT_URI", "https://forex-ai-dashboard-xepi.onrender.com"))
+            if "access_token" in result:
+                st.session_state.auth_token = result
+                st.success("Login successful!")
+                st.rerun()
+            else:
+                st.error("Login failed. Please try again.")
+        except Exception as e:
+            st.error(f"Error during login: {str(e)}")
+    else:
+        auth_url = app.get_authorization_request_url(scopes=["User.Read"], redirect_uri=os.environ.get("REDIRECT_URI", "https://forex-ai-dashboard-xepi.onrender.com"))
+        st.link_button("Login with inaradesigns.store", auth_url)
     st.stop()
 
 # --- DATA CONNECTION ---
