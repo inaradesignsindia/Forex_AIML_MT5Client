@@ -1,0 +1,7 @@
+MetaTrader5
+pymongo[srv]
+msal
+streamlit
+pandas
+python-dotenv
+scikit-learn
