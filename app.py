@@ -57,3 +57,29 @@ if page == "Overview":
         
         st.subheader("Recent Activity")
         st.dataframe(live_state['positions'])
+    else:
+        st.info("No data available. Please ensure the MT5 engine is running on your Windows 365 VM.")
+        st.write("**Expected Data:**")
+        st.write("- Account balance and equity")
+        st.write("- Active trading positions")
+        st.write("- AI trading signals")
+
+elif page == "Live Quotes":
+    st.header("Live Market Quotes")
+    st.info("Live quotes feature coming soon. This will display real-time forex prices.")
+
+elif page == "AI Suggestions":
+    st.header("AI Trading Suggestions")
+    if live_state and 'suggestion' in live_state:
+        st.success(f"Current AI Signal: {live_state['suggestion']}")
+        st.metric("AI Confidence", f"{live_state.get('ai_confidence', 0)}%")
+    else:
+        st.info("No AI suggestions available. Start the MT5 engine to generate signals.")
+
+elif page == "Portfolio":
+    st.header("Portfolio Overview")
+    if live_state and 'positions' in live_state:
+        st.subheader("Open Positions")
+        st.dataframe(live_state['positions'])
+    else:
+        st.info("No portfolio data available.")
