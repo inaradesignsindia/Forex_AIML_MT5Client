@@ -46,7 +46,7 @@ if "auth_token" not in st.session_state:
             st.error(f"Error during login: {str(e)}")
     else:
         auth_url = app.get_authorization_request_url(scopes=["User.Read"], redirect_uri=os.environ.get("REDIRECT_URI", "https://forex-ai-dashboard-xepi.onrender.com"))
-        st.link_button("🔐 Login with Microsoft", auth_url)
+        st.markdown(f'<a href="{auth_url}" target="_self" style="text-decoration: none;"><button style="background: #7c3aed; color: white; border: none; padding: 10px 20px; border-radius: 10px; font-size: 16px; cursor: pointer;">🔐 Login with Microsoft</button></a>', unsafe_allow_html=True)
     st.stop()
 
 # --- DATA CONNECTION ---
