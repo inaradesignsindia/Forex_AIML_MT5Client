@@ -5,7 +5,7 @@ import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 
 # Config
-MONGO_URL = "your_atlas_connection_string"
+MONGO_URL = "mongodb+srv://inaradesignsindia:Singlelot5@cluster0.luis5th.mongodb.net/?appName=Cluster0"
 client = MongoClient(MONGO_URL)
 db = client.forex_db
 
