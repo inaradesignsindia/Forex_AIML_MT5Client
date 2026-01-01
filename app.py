@@ -55,7 +55,7 @@ db = client.forex_db
 
 # --- SIDEBAR NAVIGATION ---
 st.sidebar.markdown('<h2 style="color: #7c3aed; font-weight: bold;">Navigation</h2>', unsafe_allow_html=True)
-page = st.sidebar.radio("", ["📊 Overview", "💹 Live Quotes", "🤖 AI Suggestions", "📁 Portfolio", "🔗 Connection Test"], label_visibility="collapsed")
+page = st.sidebar.radio("", ["📊 Overview", "💹 Live Quotes", "🤖 AI Suggestions", "📁 Portfolio", "🔗 Connection Test", "💼 Manual Trade"], label_visibility="collapsed")
 
 # --- MAIN DASHBOARD ---
 live_state = db.live_state.find_one({"id": "current_state"})
@@ -159,3 +159,79 @@ elif page == "🔗 Connection Test":
         st.success("🎉 All connections are working properly!")
     else:
         st.error("⚠️ Some connections have issues - check the details above")
+
+elif page == "💼 Manual Trade":
+    st.markdown('<h2 class="main-header">Manual Trade</h2>', unsafe_allow_html=True)
+
+    # Trade form
+    with st.form("manual_trade_form"):
+        st.markdown('<div class="card"><h3 style="color: #7c3aed; margin-bottom: 15px;">Place Manual Trade</h3></div>', unsafe_allow_html=True)
+
+        col1, col2 = st.columns(2)
+        with col1:
+            symbol = st.selectbox("Symbol", ["EURUSD", "GBPUSD", "USDJPY", "AUDUSD", "USDCAD", "USDCHF", "NZDUSD", "EURJPY", "GBPJPY", "BTCUSD"], index=0)
+        with col2:
+            order_type = st.selectbox("Order Type", ["Market", "Limit", "Stop"], index=0)
+
+        # Current price display (placeholder - would need real-time data)
+        st.metric(f"Current {symbol} Price", "1.2345", "0.0012")  # Placeholder
+
+        col3, col4 = st.columns(2)
+        with col3:
+            action = st.radio("Action", ["Buy", "Sell"], horizontal=True)
+        with col4:
+            volume = st.number_input("Volume (Lots)", min_value=0.01, max_value=100.0, value=0.1, step=0.01)
+
+        # Price input for limit/stop orders
+        if order_type != "Market":
+            price = st.number_input(f"{order_type} Price", min_value=0.0001, value=1.2345, step=0.0001)
+
+        # Risk management
+        st.subheader("Risk Management")
+        col5, col6, col7 = st.columns(3)
+        with col5:
+            take_profit = st.number_input("Take Profit (pips)", min_value=0, value=50, step=1)
+        with col6:
+            stop_loss = st.number_input("Stop Loss (pips)", min_value=0, value=30, step=1)
+        with col7:
+            trailing_stop = st.checkbox("Trailing Stop Loss")
+
+        submitted = st.form_submit_button("Place Trade", use_container_width=True)
+
+        if submitted:
+            # Create trade command
+            trade_command = {
+                "symbol": symbol,
+                "action": action.lower(),
+                "order_type": order_type.lower(),
+                "volume": volume,
+                "take_profit": take_profit,
+                "stop_loss": stop_loss,
+                "trailing_stop": trailing_stop,
+                "timestamp": time.time(),
+                "status": "pending"
+            }
+            if order_type != "Market":
+                trade_command["price"] = price
+
+            # Save to MongoDB
+            try:
+                db.trade_commands.insert_one(trade_command)
+                st.success(f"✅ {action} order for {symbol} submitted successfully!")
+                st.info("The MT5 engine will execute this trade when it checks for commands.")
+            except Exception as e:
+                st.error(f"❌ Failed to submit trade: {str(e)}")
+
+    # Recent trades
+    st.markdown('<div class="card"><h3 style="color: #7c3aed; margin-bottom: 15px;">Recent Trade Commands</h3></div>', unsafe_allow_html=True)
+    try:
+        recent_trades = list(db.trade_commands.find().sort("timestamp", -1).limit(10))
+        if recent_trades:
+            import pandas as pd
+            df = pd.DataFrame(recent_trades)
+            df['timestamp'] = pd.to_datetime(df['timestamp'], unit='s')
+            st.dataframe(df[['timestamp', 'symbol', 'action', 'order_type', 'volume', 'status']], use_container_width=True)
+        else:
+            st.info("No recent trade commands found.")
+    except Exception as e:
+        st.error(f"Error loading recent trades: {str(e)}")
