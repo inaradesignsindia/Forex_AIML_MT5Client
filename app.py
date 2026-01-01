@@ -55,7 +55,7 @@ db = client.forex_db
 
 # --- SIDEBAR NAVIGATION ---
 st.sidebar.markdown('<h2 style="color: #7c3aed; font-weight: bold;">Navigation</h2>', unsafe_allow_html=True)
-page = st.sidebar.radio("", ["📊 Overview", "💹 Live Quotes", "🤖 AI Suggestions", "📁 Portfolio"], label_visibility="collapsed")
+page = st.sidebar.radio("", ["📊 Overview", "💹 Live Quotes", "🤖 AI Suggestions", "📁 Portfolio", "🔗 Connection Test"], label_visibility="collapsed")
 
 # --- MAIN DASHBOARD ---
 live_state = db.live_state.find_one({"id": "current_state"})
@@ -103,3 +103,59 @@ elif page == "📁 Portfolio":
         st.dataframe(live_state['positions'], use_container_width=True)
     else:
         st.info("📁 No portfolio data available.")
+
+elif page == "🔗 Connection Test":
+    st.markdown('<h2 class="main-header">Connection Test</h2>', unsafe_allow_html=True)
+
+    # Test Dashboard to MongoDB
+    st.markdown('<div class="card"><h3 style="color: #7c3aed; margin-bottom: 15px;">Dashboard ↔ MongoDB</h3></div>', unsafe_allow_html=True)
+    try:
+        # Test connection
+        db.command('ping')
+        st.success("✅ Dashboard can connect to MongoDB")
+
+        # Test read
+        count = db.live_state.count_documents({})
+        st.info(f"📊 Found {count} documents in live_state collection")
+
+        # Test data freshness
+        if live_state:
+            timestamp = live_state.get('timestamp', 0)
+            import time
+            age = time.time() - timestamp
+            if age < 60:
+                st.success(f"🕒 Data is fresh (updated {int(age)} seconds ago)")
+            elif age < 300:
+                st.warning(f"🕒 Data is stale (updated {int(age)} seconds ago)")
+            else:
+                st.error(f"❌ Data is very old (updated {int(age)} seconds ago)")
+        else:
+            st.warning("⚠️ No live data found in database")
+
+    except Exception as e:
+        st.error(f"❌ Dashboard cannot connect to MongoDB: {str(e)}")
+
+    # Test MongoDB to MT5 (data flow)
+    st.markdown('<div class="card"><h3 style="color: #7c3aed; margin-bottom: 15px;">MongoDB ↔ MT5 Engine</h3></div>', unsafe_allow_html=True)
+    if live_state:
+        st.success("✅ MT5 Engine is sending data to MongoDB")
+        st.info(f"🤖 Last AI signal: {live_state.get('suggestion', 'N/A')}")
+        st.info(f"📈 Account equity: ${live_state.get('account', {}).get('equity', 'N/A')}")
+    else:
+        st.error("❌ No data from MT5 Engine - check if MT5 is running and connected")
+
+    # Test MT5 to Dashboard (reverse flow)
+    st.markdown('<div class="card"><h3 style="color: #7c3aed; margin-bottom: 15px;">MT5 Engine → Dashboard</h3></div>', unsafe_allow_html=True)
+    if live_state and 'positions' in live_state:
+        st.success("✅ Dashboard is receiving position data from MT5")
+        st.info(f"📊 {len(live_state['positions'])} active positions")
+    else:
+        st.warning("⚠️ No position data received - MT5 may not have open trades")
+
+    # Overall status
+    st.markdown('<div class="card"><h3 style="color: #7c3aed; margin-bottom: 15px;">System Status</h3></div>', unsafe_allow_html=True)
+    all_good = live_state and db.command('ping')
+    if all_good:
+        st.success("🎉 All connections are working properly!")
+    else:
+        st.error("⚠️ Some connections have issues - check the details above")
