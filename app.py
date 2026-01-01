@@ -50,15 +50,23 @@ if "auth_token" not in st.session_state:
     st.stop()
 
 # --- DATA CONNECTION ---
-client = MongoClient(os.environ["MONGO_URL"])
-db = client.forex_db
+@st.cache_resource
+def get_db():
+    client = MongoClient(os.environ["MONGO_URL"])
+    return client.forex_db
+
+db = get_db()
 
 # --- SIDEBAR NAVIGATION ---
 st.sidebar.markdown('<h2 style="color: #7c3aed; font-weight: bold;">Navigation</h2>', unsafe_allow_html=True)
 page = st.sidebar.radio("", ["📊 Overview", "💹 Live Quotes", "🤖 AI Suggestions", "📁 Portfolio", "🔗 Connection Test", "💼 Manual Trade"], label_visibility="collapsed")
 
 # --- MAIN DASHBOARD ---
-live_state = db.live_state.find_one({"id": "current_state"})
+@st.cache_data(ttl=5)  # Cache for 5 seconds
+def get_live_state():
+    return db.live_state.find_one({"id": "current_state"})
+
+live_state = get_live_state()
 
 if page == "📊 Overview":
     st.markdown('<h2 class="main-header">Executive Summary</h2>', unsafe_allow_html=True)
